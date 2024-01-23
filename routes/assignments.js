@@ -1,22 +1,35 @@
 let Assignment = require('../model/assignment');
 
 // Récupérer tous les assignments (GET)
+// Récupérer tous les assignments (GET)
 function getAssignments(req, res) {
-    const startIndex = parseInt(req.query.startIndex) || 0;
-    const endIndex = parseInt(req.query.endIndex) || 5; // Adjust the default value as per your requirement
-  
-    Assignment.find()
-      .sort({ nom: 1 })
-      .skip(startIndex)
-      .limit(endIndex - startIndex) // Adjust the limit based on the range
-      .exec((err, assignments) => {
-        if (err) {
-          res.send(err);
-        }
-  
-        res.json(assignments);
-      });
+  const startIndex = parseInt(req.query.startIndex) || 0;
+  const endIndex = parseInt(req.query.endIndex) || 5;
+  const searchTerm = req.query.searchTerm || '';
+  const selectedFilter = req.query.selectedFilter !== undefined ? req.query.selectedFilter === 'true' : null;
+
+  const query = {
+    nom: new RegExp(searchTerm, 'i'),
+  };
+
+  // Ajouter le filtre rendu uniquement s'il est différent de null
+  if (selectedFilter !== null) {
+    query.rendu = selectedFilter;
+  } else {
   }
+
+  Assignment.find(query)
+    .sort({ nom: 1 })
+    .skip(startIndex)
+    .limit(endIndex - startIndex)
+    .exec((err, assignments) => {
+      if (err) {
+        res.send(err);
+      }
+
+      res.json(assignments);
+    });
+}
 function getAssignmentsPaginated(req, res) {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const endIndex = parseInt(req.query.endIndex) || 5; // Adjust the default value as per your requirement
