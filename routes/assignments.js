@@ -1,4 +1,5 @@
 let Assignment = require('../model/assignment');
+let Matiere = require('../model/matiere');
 
 // Récupérer tous les assignments (GET)
 // Récupérer tous les assignments (GET)
@@ -6,7 +7,7 @@ function getAssignments(req, res) {
   const startIndex = parseInt(req.query.startIndex) || 0;
   const endIndex = parseInt(req.query.endIndex) || 5;
   const searchTerm = req.query.searchTerm || '';
-  const selectedFilter = req.query.selectedFilter !== undefined ? req.query.selectedFilter === 'true' : null;
+  const selectedFilter = req.query.selectedFilter ;
 
   const query = {
     nom: new RegExp(searchTerm, 'i'),
@@ -22,6 +23,7 @@ function getAssignments(req, res) {
     .sort({ nom: 1 })
     .skip(startIndex)
     .limit(endIndex - startIndex)
+    .populate('matiere') // Utilisez la méthode populate pour inclure les détails de la matière
     .exec((err, assignments) => {
       if (err) {
         res.send(err);
@@ -49,12 +51,14 @@ function getAssignmentsPaginated(req, res) {
 
 // Récupérer un assignment par son id (GET)
 function getAssignment(req, res){
-    let assignmentId = req.params.id;
+  let assignmentId = req.params.id;
 
-    Assignment.findOne({id: assignmentId}, (err, assignment) =>{
-        if(err){res.send(err)}
-        res.json(assignment);
-    })
+  Assignment.findOne({id: assignmentId})
+  .populate('matiere') // suppose que 'matiere' est le champ dans le modèle Assignment qui fait référence à la collection Matiere
+  .exec((err, assignment) => {
+      if(err){res.send(err)}
+      res.json(assignment);
+  })
 }
 
 // Ajout d'un assignment (POST)
@@ -65,33 +69,56 @@ function postAssignment(req, res){
     assignment.nom = req.body.nom;
     assignment.dateDeRendu = req.body.dateDeRendu;
     assignment.rendu = req.body.rendu;
-
+    console.log(req.body.matiere);
     console.log("POST assignment reçu :");
-    console.log(assignment)
+    Matiere.findOne({ non_matiere: req.body.matiere }, (err, matiere) => {
+      console.log(matiere);
+      if (err) {
+          return res.status(500).json({ error: 'Error retrieving subject details' });
+      }
 
-    assignment.save( (err) => {
-        if(err){
-            res.send('cant post assignment ', err);
-        }
-        res.json({ message: `${assignment.nom} saved!`})
-    })
+      if (!matiere) {
+          return res.status(404).json({ error: 'Subject not found' });
+      }
+      assignment.matiere = matiere._id; // Utilisez l'ID de la Matière
+
+      // Enregistrez l'Assignment après avoir peuplé les détails de la Matière
+      assignment.save((err) => {
+          if (err) {
+              return res.status(500).json({ error: 'Error saving assignment', details: err });
+          }
+          res.json({ message: `${assignment.nom} saved!` });
+      });
+  });
 }
 
 // Update d'un assignment (PUT)
+// Update d'un assignment (PUT)
+// Update d'un assignment (PUT)
 function updateAssignment(req, res) {
-    console.log("UPDATE recu assignment : ");
-    console.log(req.body);
-    Assignment.findByIdAndUpdate(req.body._id, req.body, {new: true}, (err, assignment) => {
-        if (err) {
-            console.log(err);
-            res.send(err)
-        } else {
-          res.json({message: 'updated'})
-        }
+  console.log("UPDATE recu assignment : ");
+  console.log(req.body);
 
-      // console.log('updated ', assignment)
-    });
+  Matiere.findOne({ non_matiere: req.body.matiere.non_matiere }, (err, matiere) => {
+      if (err) {
+          return res.status(500).json({ error: 'Error retrieving subject details' });
+      }
 
+      if (!matiere) {
+          return res.status(404).json({ error: 'Subject not found' });
+      }
+
+      req.body.matiere = matiere._id; // Utilisez l'ID de la Matière
+
+      Assignment.findByIdAndUpdate(req.body._id, req.body, {new: true}, (err, assignment) => {
+          if (err) {
+              console.log(err);
+              res.send(err)
+          } else {
+            res.json({message: 'updated'})
+          }
+      });
+  });
 }
 
 // suppression d'un assignment (DELETE)

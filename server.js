@@ -4,6 +4,8 @@ let bodyParser = require('body-parser');
 let assignment = require('./routes/assignments');
 let Assignment = require('./model/assignment');
 let usersRouter = require('./routes/users');
+let matiereRoutes = require('./routes/matiere');
+
 
 let mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
@@ -43,6 +45,7 @@ app.use(function (req, res, next) {
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use('/api/users', usersRouter);
+app.use('/api/matiere', matiereRoutes);
 
 let port = process.env.PORT || 8010;
 
@@ -75,6 +78,8 @@ app.route(prefix + '/assignments')
     }
   });
   */
+
+
 app.route(prefix + '/assignments')
   .get(assignment.getAssignments);
 
@@ -89,7 +94,9 @@ app.route(prefix + '/assignments')
 
   app.route(prefix + '/assignmentsPaginated')
   .get(assignment.getAssignmentsPaginated);
-  
+
+
+
 // On démarre le serveur
 app.listen(port, "0.0.0.0");
 console.log('Serveur démarré sur http://localhost:' + port);

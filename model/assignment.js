@@ -3,9 +3,14 @@ let Schema = mongoose.Schema;
 
 let AssignmentSchema = Schema({
     id: Number,
-    auteurs: String,
-    nom: String,
+    auteurs: String, // Référence vers la collection 'users'
+    matiere: {
+        type: Schema.Types.ObjectId,
+        ref: 'Matiere'
+    },    nom: String,
     dateDeRendu: Date,
+    Notes: Number,
+    Remarque: String,
     rendu: Boolean
 });
 
